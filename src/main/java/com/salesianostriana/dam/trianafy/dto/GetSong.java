@@ -7,17 +7,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class CreateSong {
 
-    private Long idArtist;
+public class GetSong {
 
+    private Long id;
     private String title;
-
     private String album;
-
     private String year;
-
+    private Artist artist;
 }

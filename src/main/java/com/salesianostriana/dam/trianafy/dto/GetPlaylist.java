@@ -1,6 +1,5 @@
 package com.salesianostriana.dam.trianafy.dto;
 
-import com.salesianostriana.dam.trianafy.model.Artist;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,14 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CreateSong {
 
-    private Long idArtist;
+public class GetPlaylist {
 
-    private String title;
+    private Long id;
 
-    private String album;
+    private String name;
 
-    private String year;
-
+    private int numberSongs;
 }
