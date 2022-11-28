@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,13 +23,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
+@RequiredArgsConstructor
+
 public class PlaylistController {
 
-    private PlaylistService playlistService;
+    private final PlaylistService playlistService;
 
-    private SongService songService;
+    private final SongService songService;
 
-    private ConverterPlaylist converterPlaylist;
+    private final ConverterPlaylist converterPlaylist;
 
 
     @Operation(summary = "Crea una playlist nueva a base de una dto")
@@ -194,6 +197,35 @@ public class PlaylistController {
                 .body(playlistService.findById(id).get().getSongs());
     }
 
+    @Operation(summary = "Añade una canción por ID a una playlist por ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Añadido con éxito",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Playlist.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "No se ha podido encontrar la playlist o una canción por esa id",
+                    content = @Content),
+    })
+    @PostMapping("/list/{id1}/song/{id2}")
+    public ResponseEntity<Playlist> addSongInPlayListById(@PathVariable Long id1,
+                                                          @PathVariable Long id2) {
+
+        if (songService.findById(id2).isEmpty() || playlistService.findById(id1).isEmpty())  {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        } else {
+
+            playlistService.findById(id1).get().addSong(songService.findById(id2).get());
+
+            return ResponseEntity
+                    .ok()
+                    .body(playlistService.add(playlistService.findById(id1).get()));
+        }
+    }
+
     @Operation(summary = "Busca una canción dentro de una playlist")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -205,9 +237,10 @@ public class PlaylistController {
                     content = @Content)
     })
     @GetMapping("/list/{id1}/song/{id2}")
-    public ResponseEntity<Song> findSongByIdInPlaylist(@PathVariable Long id1,
-                                                       @PathVariable Long id2) {
+    public ResponseEntity<List<Song>> findSongByIdInPlaylist(@PathVariable Long id1,
+                                                             @PathVariable Long id2) {
 
+        List<Song> list;
         if (playlistService.findById(id1).isEmpty() || songService.findById(id2).isEmpty()) {
 
             return ResponseEntity
@@ -216,7 +249,7 @@ public class PlaylistController {
 
         } else {
 
-            List<Song> list = playlistService.findById(id1).get().getSongs();
+            list = playlistService.findById(id1).get().getSongs();
 
         }
 
@@ -225,42 +258,12 @@ public class PlaylistController {
                 .body(list);
     }
 
-    @Operation(summary = "Añade una canción por ID a una playlist por ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "Añadido con éxito",
-                    content = { @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Playlist.class))}),
-            @ApiResponse(responseCode = "404",
-                    description = "No se ha podido encontrar la playlist o una canción por esa id",
-                    content = @Content),
-    })
-    @PostMapping("/list/{id}/song/{id2}")
-    public ResponseEntity<Playlist> addSongInPlayListById(@PathVariable Long id1, @PathVariable Long id2) {
-
-        if (playlistService.findById(id1).isEmpty() || songService.findById(id2).isEmpty()) {
-
-            return ResponseEntity
-                    .notFound()
-                    .build();
-
-        } else {
-
-            if (!playlistService.findById(id1).get().getSongs().contains(songService.findById(id2).get())) {
-
-                playlistService.findById(id1).get().addSong(songService.findById(id2).get());
-            }
-            return ResponseEntity
-                    .ok()
-                    .body(playlistService.add(playlistService.findById(id1).get()))
-        }
-    }
 
     @Operation(summary = "Borra una canción de la Playlist")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204",
                     description = "Canción eliminada con éxito",
-                    content = { @Content(mediaType = "application/json",
+                    content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Playlist.class))}),
             @ApiResponse(responseCode = "404",
                     description = "Canción inexistente dentro de la Playlist indicada",
@@ -270,7 +273,7 @@ public class PlaylistController {
     public ResponseEntity<Playlist> deleteSong(@PathVariable Long id,
                                                @PathVariable Long id2) {
 
-        if (playlistService.findById(id).isEmpty() || songService.findById(id2).isEmpty()){
+        if (playlistService.findById(id).isEmpty() || songService.findById(id2).isEmpty()) {
 
             return ResponseEntity
                     .notFound()
@@ -283,4 +286,5 @@ public class PlaylistController {
                 .noContent()
                 .build();
 
+    }
 }

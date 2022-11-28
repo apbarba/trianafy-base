@@ -17,14 +17,14 @@ public class ConverterSong {
                 .build();
     }
 
-    public GetSong getSong(Song s, Artist artist){
+    public GetSong getSong(Song s){
 
         return GetSong.builder()
                 .id(s.getId())
                 .title(s.getTitle())
                 .album(s.getAlbum())
                 .year(s.getYear())
-                .artist(artist)
+                .artist(s.getArtist())
                 .build();
     }
 }

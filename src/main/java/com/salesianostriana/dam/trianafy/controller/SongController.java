@@ -2,6 +2,7 @@ package com.salesianostriana.dam.trianafy.controller;
 
 import com.salesianostriana.dam.trianafy.dto.ConverterSong;
 import com.salesianostriana.dam.trianafy.dto.CreateSong;
+import com.salesianostriana.dam.trianafy.dto.GetSong;
 import com.salesianostriana.dam.trianafy.model.Artist;
 import com.salesianostriana.dam.trianafy.model.Playlist;
 import com.salesianostriana.dam.trianafy.model.Song;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,14 +24,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Controller
+@RequiredArgsConstructor
+
 public class SongController {
 
-    private SongService songService;
-    private ConverterSong cS;
+    private final SongService songService;
+    private final ConverterSong cS;
 
-    private ArtistService artistService;
+    private final ArtistService artistService;
 
-    private PlaylistService playlistService;
+    private final PlaylistService playlistService;
 
     @Operation(summary = "Crea una nueva canción y la añade a la lista")
     @ApiResponses(value = {
@@ -44,18 +48,20 @@ public class SongController {
     @PostMapping("/song/")
     public ResponseEntity<Song> newArtist(@RequestBody CreateSong dto){
 
-        if (songService.findById(dto.getIdArtist()).isEmpty()){
+        Optional<Artist> artist = artistService.findById(dto.getIdArtist());
+
+        if (artist.isEmpty()){
 
             return ResponseEntity
                     .badRequest()
                     .build();
         }
 
-        Song new = cS.createSong(dto, songService.findById(dto.getIdArtist()).get().getArtist());
+        Song newSong = cS.createSong(dto, artist.get());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(songService.add(new));
+                .body(songService.add(newSong));
 
        }
 
@@ -77,9 +83,10 @@ public class SongController {
             return ResponseEntity
                     .notFound()
                     .build();
-        }
+        }else {
 
-        return ResponseEntity.ok(songService.findAll());
+            return ResponseEntity.ok(songService.findAll());
+        }
     }
 
     @Operation(summary = "Muestra por id la información de la canción")
@@ -119,8 +126,10 @@ public class SongController {
                     content = @Content),
     })
     @PutMapping("/song/{id}")
-    public ResponseEntity<Song> editArtist(@RequestBody Song song,
-                                             @PathVariable Long id) {
+    public ResponseEntity<Song> editArtist(@RequestBody CreateSong dto,
+                                              @PathVariable Long id) {
+        Optional<Artist> artist = artistService.findById(dto.getIdArtist());
+
 
         if (songService.findById(id).isEmpty()) {
 
@@ -129,7 +138,7 @@ public class SongController {
                     .build();
 
         }
-        if (artistService.findById(id).isEmpty()) {
+        if (artistService.findById(dto.getIdArtist()).isEmpty()) {
 
             return ResponseEntity
                     .badRequest()
@@ -137,17 +146,26 @@ public class SongController {
 
         } else {
 
-            return ResponseEntity.of(
-                    songService.findById(id)
-                            .map(old -> {
-                                old.setTitle(song.getTitle());
-                                old.setArtist(song.getArtist());
-                                old.setAlbum(song.getAlbum());
-                                old.setYear(song.getYear());
-                                return Optional.of(songService.add(old));
-                            })
-                            .orElse(Optional.empty())
-            );
+            songService.findById(id).get().setTitle(dto.getTitle());
+            songService.findById(id).get().setArtist(artist.get());
+            songService.findById(id).get().setAlbum(dto.getAlbum());
+            songService.findById(id).get().setYear(dto.getYear());
+
+            return  ResponseEntity
+                    .ok()
+                    .body(songService.findById(id).get());
+
+ //           return ResponseEntity.of(
+ //                   songService.findById(id)
+ //                           .map(old -> {
+ //                               old.setTitle(dto.getTitle());
+ //                               old.setArtist(artistService.findById(dto.getIdArtist()));
+ //                               old.setAlbum(dto.getAlbum());
+ //                               old.setYear(dto.getYear());
+ //                               return Optional.of(songService.add(old));
+ //                           })
+ //                           .orElse(Optional.empty())
+ //           );
         }
 
     }
